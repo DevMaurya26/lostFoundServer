@@ -20,6 +20,7 @@
     "passport": "^0.7.0",
     "passport-local-mongoose": "^8.0.0",
     "react-router-dom": "^6.22.0",
-    "session": "^0.1.0"
+    "session": "^0.1.0",
+    "@octokit/rest": "^20.0.2"
   }
 }

@@ -4,7 +4,59 @@ const userModel = require('../DB/signupDB')
 const itemModel = require('../DB/itemDB')
 const multer = require("multer");
 const path = require("path");
+const util = require('util');
+const { Octokit } = require('@octokit/rest');
+const fs = require('fs');
 
+const readFilePromise = util.promisify(fs.readFile);
+const githubToken ="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" ;
+
+async function run(imgName,imagePath) {
+  if (!githubToken) {
+    console.error("Expected GITHUB_TOKEN environment variable. Exiting...");
+    process.exit(-1);
+  }
+
+  const octokit = new Octokit({
+    auth: githubToken,
+    log: console,
+  });
+
+  const owner = "devmaurya26";
+  const repo = "todo";
+
+  // Check if the repository exists, create if not
+  try {
+    await octokit.repos.get({ owner, repo });
+  } catch (error) {
+    if (error.status === 404) {
+      // Repository doesn't exist, create it
+      await octokit.repos.createForAuthenticatedUser({
+        name: repo,
+        description: "Testing uploading an image through the GitHub API",
+      });
+    } else {
+      // Unexpected error
+      throw error;
+    }
+  }
+
+  // Read the file from the uploaded image
+  const bytes = await readFilePromise(imagePath);
+  const buffer = Buffer.from(bytes);
+  const content = buffer.toString('base64');
+
+  // Upload the image to the repository
+  const result = await octokit.repos.createOrUpdateFileContents({
+    owner,
+    repo,
+    message: "Adding an image to the repository",
+    path: `public/uploads/${imgName}`,
+    content,
+  });
+
+//   console.log(`Created commit at ${result.data.commit.html_url}`);
+}
 
 router.get('/apide', (req, res) => {
   const data = { d: "Hello Dev maurya" }
@@ -35,6 +87,16 @@ const upload = multer({
 }).single("image");
 
 router.post('/upload', upload, async (req, res) => {
+
+  const uploadedImagePath = req.file.originalname;
+  try {
+    await run(uploadedImagePath,req.file.path);
+    res.status(200).send('Image uploaded successfully!');
+  } catch (error) {
+    console.error(error, error.stack);
+    res.status(500).send('Internal Server Error');
+  }
+
   const { username, contact, objectName, location, date } = req.body;
   try {
 
