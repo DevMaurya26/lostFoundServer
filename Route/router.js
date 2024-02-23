@@ -23,7 +23,7 @@ async function run(imgName,imagePath) {
   });
 
   const owner = "devmaurya26";
-  const repo = "todo";
+  const repo = "lostfoundserver";
 
   // Check if the repository exists, create if not
   try {
